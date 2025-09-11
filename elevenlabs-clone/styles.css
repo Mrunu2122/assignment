@@ -1,0 +1,8 @@
+/* Test if this file is being loaded */
+.test-css-file {
+  color: red;
+  font-weight: bold;
+  padding: 1rem;
+  border: 2px solid red;
+  margin: 1rem 0;
+}
