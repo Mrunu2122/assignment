@@ -1,5 +1,8 @@
+--find-links https://download.pytorch.org/whl/torch_stable.html
+--find-links https://pytorch-geometric.com/whl/torch-2.0.0+cu117.html
+--only-binary :all:
 fastapi==0.104.1
-uvicorn==0.24.0
+uvicorn[standard]==0.24.0
 gTTS==2.3.2
 python-multipart==0.0.6
 python-dotenv==1.0.0
