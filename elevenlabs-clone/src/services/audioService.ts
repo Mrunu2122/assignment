@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://localhost:8000/api';
+const API_BASE_URL = 'https://assignment-cfmn.onrender.com/api';
 
 // Language to code mapping
 const LANGUAGE_MAP = {

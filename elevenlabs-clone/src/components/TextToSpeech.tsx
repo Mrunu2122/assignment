@@ -35,7 +35,7 @@ const TextToSpeech = () => {
 
     try {
       // Create a new audio element with the TTS URL
-      const audioUrl = `http://localhost:8000/api/tts?text=${encodeURIComponent(text)}&lang=${selectedLanguage}`;
+      const audioUrl = `https://assignment-cfmn.onrender.com/api/tts?text=${encodeURIComponent(text)}&lang=${selectedLanguage}`;
       console.log('TTS Audio URL:', audioUrl);
 
       const audio = new Audio(audioUrl);
@@ -85,7 +85,7 @@ const TextToSpeech = () => {
 
     try {
       // Create a download link for the TTS audio
-      const audioUrl = `http://localhost:8000/api/tts?text=${encodeURIComponent(text)}&lang=${selectedLanguage}`;
+      const audioUrl = `https://assignment-cfmn.onrender.com/api/tts?text=${encodeURIComponent(text)}&lang=${selectedLanguage}`;
 
       // Create a temporary link and trigger download
       const a = document.createElement('a');
