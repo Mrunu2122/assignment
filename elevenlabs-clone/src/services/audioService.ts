@@ -1,69 +1,66 @@
-interface AudioRequest {
-  text: string;
-  language: string;
-  voice: string;
-}
+const API_BASE_URL = 'http://localhost:8000/api';
 
-interface AudioResponse {
-  url: string;
-  language: string;
-  voice: string;
-  timestamp: string;
-}
+// Language to code mapping
+const LANGUAGE_MAP = {
+  english: 'en',
+  arabic: 'ar'
+};
 
-/**
- * Converts text to speech using the API
- * @param text - The text to convert to speech
- * @param language - The language of the text
- * @param voice - The voice to use for the speech
- * @returns A promise that resolves to the audio response
- */
-export const textToSpeech = async ({
-  text,
-  language,
-  voice,
-}: AudioRequest): Promise<AudioResponse> => {
+// Get the audio URL for text-to-speech
+export const getTtsAudioUrl = (text: string, language: string): string => {
+  const langCode = LANGUAGE_MAP[language.toLowerCase() as keyof typeof LANGUAGE_MAP] || 'en';
+  return `${API_BASE_URL}/tts?text=${encodeURIComponent(text)}&lang=${language}`;
+};
+
+// Get the supported languages
+export const getSupportedLanguages = async (): Promise<string[]> => {
   try {
-    const response = await fetch('/api/audio', {
-      method: 'POST',
+    const response = await fetch(`${API_BASE_URL}/languages`, {
+      method: 'GET',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ text, language, voice }),
+      credentials: 'include',
     });
-
+    
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(
-        errorData.message || 'Failed to generate speech. Please try again.'
-      );
+      throw new Error(`Error fetching languages: ${response.statusText}`);
     }
-
-    return await response.json();
+    
+    const data = await response.json();
+    return data.languages || [];
   } catch (error) {
-    console.error('Error in textToSpeech:', error);
-    throw error instanceof Error
-      ? error
-      : new Error('An unknown error occurred while generating speech');
+    console.error('Error fetching supported languages:', error);
+    return ['english']; // Default to English if there's an error
   }
 };
 
+// For backward compatibility
+export const getAudioByLanguage = async (text: string, language: string): Promise<string> => {
+  return getTtsAudioUrl(text, language);
+};
+
 /**
- * Fetches the audio URL for a previously generated speech
- * @param audioId - The ID of the audio to fetch
- * @returns A promise that resolves to the audio response
+ * Fetches all available audio files
  */
-export const getAudioUrl = async (audioId: string): Promise<AudioResponse> => {
+export const getAllAudioFiles = async (): Promise<any[]> => {
   try {
-    const response = await fetch(`/api/audio/${audioId}`);
+    const response = await fetch(`${API_BASE_URL}/audio`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+    });
     
     if (!response.ok) {
-      throw new Error('Failed to fetch audio URL');
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.detail || `Error fetching audio files: ${response.statusText}`);
     }
     
     return await response.json();
   } catch (error) {
-    console.error('Error fetching audio URL:', error);
+    console.error('Error fetching audio files:', error);
     throw error;
   }
 };

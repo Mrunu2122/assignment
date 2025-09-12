@@ -1,43 +1,104 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { PlayIcon, PauseIcon, ArrowDownTrayIcon } from '@heroicons/react/24/solid';
+import { getTtsAudioUrl, getSupportedLanguages } from '../services/audioService';
 
-interface AudioFile {
-  language: string;
-  url: string;
-}
+// Audio file interface moved to audioService.ts
 
 const TextToSpeech = () => {
   // State for the text input
   const [text, setText] = useState('');
   const [selectedLanguage, setSelectedLanguage] = useState('english');
   const [isPlaying, setIsPlaying] = useState(false);
-  const audioRef = useRef<HTMLAudioElement>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [supportedLanguages] = useState<string[]>(['english', 'arabic']);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  // Mock audio files - these would come from your API
-  const audioFiles: AudioFile[] = [
-    { language: 'english', url: '/api/audio/english' },
-    { language: 'arabic', url: '/api/audio/arabic' }
-  ];
-
-  const handlePlayPause = () => {
-    if (audioRef.current) {
-      if (isPlaying) {
+  useEffect(() => {
+    // Clean up audio when component unmounts
+    return () => {
+      if (audioRef.current) {
         audioRef.current.pause();
-      } else {
-        audioRef.current.play();
+        audioRef.current = null;
       }
-      setIsPlaying(!isPlaying);
+    };
+  }, []);
+
+  const handlePlayPause = async () => {
+    if (!text.trim()) {
+      alert('Please enter some text to convert to speech');
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      // Create a new audio element with the TTS URL
+      const audioUrl = `http://localhost:8000/api/tts?text=${encodeURIComponent(text)}&lang=${selectedLanguage}`;
+      console.log('TTS Audio URL:', audioUrl);
+
+      const audio = new Audio(audioUrl);
+
+      audio.onplay = () => {
+        console.log('Playback started');
+        setIsPlaying(true);
+        setIsLoading(false);
+      };
+
+      audio.onerror = (e) => {
+        console.error('Audio error:', e);
+        setIsLoading(false);
+        alert('Error playing audio. Please try again.');
+      };
+
+      audio.onended = () => {
+        console.log('Playback ended');
+        setIsPlaying(false);
+      };
+
+      // Start playback
+      const playPromise = audio.play();
+
+      if (playPromise !== undefined) {
+        playPromise.catch(error => {
+          console.error('Playback failed:', error);
+          setIsLoading(false);
+          alert('Playback failed. Please check your audio output and try again.');
+        });
+      }
+
+      audioRef.current = audio;
+
+    } catch (error) {
+      console.error('Error in TTS playback:', error);
+      setIsLoading(false);
+      alert('Failed to convert text to speech. Please try again.');
     }
   };
 
-  const handleDownload = () => {
-    // This would trigger a download of the current audio file
-    const link = document.createElement('a');
-    link.href = audioFiles.find(file => file.language === selectedLanguage)?.url || '';
-    link.download = `audio-${selectedLanguage}.mp3`;
-    link.click();
+  const handleDownload = async () => {
+    if (!text.trim()) {
+      alert('Please enter some text to download');
+      return;
+    }
+
+    try {
+      // Create a download link for the TTS audio
+      const audioUrl = `http://localhost:8000/api/tts?text=${encodeURIComponent(text)}&lang=${selectedLanguage}`;
+
+      // Create a temporary link and trigger download
+      const a = document.createElement('a');
+      a.href = audioUrl;
+      a.download = `tts_${selectedLanguage}_${Date.now()}.mp3`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+
+    } catch (error) {
+      console.error('Error downloading TTS audio:', error);
+      alert('Failed to download audio. Please try again.');
+    }
   };
 
   return (
@@ -92,19 +153,31 @@ const TextToSpeech = () => {
           <select
             value={selectedLanguage}
             onChange={(e) => setSelectedLanguage(e.target.value)}
-            className="p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-black focus:border-transparent"
+            className="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            disabled={isLoading}
           >
-            <option value="english">English</option>
-            <option value="arabic">Arabic</option>
+            {supportedLanguages.map(lang => (
+              <option key={lang} value={lang}>
+                {lang.charAt(0).toUpperCase() + lang.slice(1)}
+              </option>
+            ))}
           </select>
-          
+
           <div className="flex items-center space-x-3">
             <button
               onClick={handlePlayPause}
-              className={`flex items-center px-6 py-2 rounded-md text-sm font-medium text-white ${text ? 'bg-black hover:bg-gray-800' : 'bg-gray-400 cursor-not-allowed'} focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black`}
-              disabled={!text}
+              className={`flex items-center px-6 py-2 rounded-md text-sm font-medium text-white ${!text ? 'bg-gray-400 cursor-not-allowed' : 'bg-black hover:bg-gray-800'} focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black`}
+              disabled={!text || isLoading}
             >
-              {isPlaying ? (
+              {isLoading ? (
+                <>
+                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  {isPlaying ? 'Playing...' : 'Loading...'}
+                </>
+              ) : isPlaying ? (
                 <>
                   <PauseIcon className="h-4 w-4 mr-2" />
                   Pause
@@ -128,12 +201,7 @@ const TextToSpeech = () => {
           </div>
         </div>
 
-        {/* Hidden audio element */}
-        <audio
-          ref={audioRef}
-          src={audioFiles.find(file => file.language === selectedLanguage)?.url}
-          onEnded={() => setIsPlaying(false)}
-        />
+        {/* Hidden audio element for playback - we're creating Audio elements dynamically */}
       </main>
     </div>
   );
