@@ -1,6 +1,6 @@
 import { Inter } from 'next/font/google';
-import Header from '@/components/Header';
-import TextToSpeech from '@/components/TextToSpeech';
+import Header from '../components/Header';
+import TextToSpeech from '../components/TextToSpeech';
 
 const inter = Inter({ subsets: ['latin'] });
 
