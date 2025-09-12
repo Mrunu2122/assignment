@@ -7,9 +7,11 @@ const inter = Inter({ subsets: ['latin'] });
 export default function Home() {
   return (
     <div className={`min-h-screen bg-white ${inter.className}`}>
+      {/* Header outside the container to make it full width */}
+      <Header />
+      
       <div className="bg-gradient-to-b from-blue-50 to-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <Header />
           <main className="py-8">
             <div className="text-center mb-10">
               <h1 className="text-4xl font-bold text-gray-900 mb-4">
